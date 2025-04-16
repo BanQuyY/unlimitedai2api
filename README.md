@@ -134,6 +134,7 @@ Render 可以直接部署 docker 镜像,不需要 fork 仓库：[Render](https:/
 4. `REQUEST_RATE_LIMIT=60`  [可选]每分钟下的单ip请求速率限制,默认:60次/min
 5. `PROXY_URL=http://127.0.0.1:10801`  [可选]代理
 6. `ROUTE_PREFIX=hf`  [可选]路由前缀,默认为空,添加该变量后的接口示例:`/hf/v1/chat/completions`
+7. `REASONING_HIDE=0`  [可选]**隐藏**推理过程(默认:0)[0:关闭,1:开启]
 
 ## 进阶配置
 

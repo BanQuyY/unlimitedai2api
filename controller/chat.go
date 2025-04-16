@@ -533,7 +533,11 @@ func processStreamData(c *gin.Context, data, responseId, model string, modelInfo
 		case "0": // 实际回答内容
 			// 如果之前有思考内容，现在切换到实际内容，需要关闭思考标签
 			if *thinkStartType && !*thinkEndType {
-				text = "</think>\n\n" + content
+				if config.ReasoningHide != 1 {
+					text = "</think>\n\n" + content
+				} else {
+					text = content
+				}
 				*thinkStartType = false
 				*thinkEndType = true
 			} else {
@@ -549,6 +553,11 @@ func processStreamData(c *gin.Context, data, responseId, model string, modelInfo
 			return text, true
 
 		case "g": // 思考内容
+			// 如果 ReasoningHide 为 1，则不返回思考内容
+			if config.ReasoningHide == 1 {
+				return "", true
+			}
+
 			// 如果是第一次收到思考内容
 			if !*thinkStartType {
 				text = "<think>\n\n" + content
@@ -569,15 +578,16 @@ func processStreamData(c *gin.Context, data, responseId, model string, modelInfo
 		case "e": // 结束消息
 			// 如果思考没有正常结束，确保关闭思考标签
 			if *thinkStartType && !*thinkEndType {
-				text = "</think>\n\n"
+				if config.ReasoningHide != 1 {
+					text = "</think>\n\n"
+					if err := handleDelta(c, text, responseId, model, jsonData); err != nil {
+						logger.Errorf(c.Request.Context(), "handleDelta for closing think tag err: %v", err)
+						c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+						return "", false
+					}
+				}
 				*thinkStartType = false
 				*thinkEndType = true
-
-				if err := handleDelta(c, text, responseId, model, jsonData); err != nil {
-					logger.Errorf(c.Request.Context(), "handleDelta for closing think tag err: %v", err)
-					c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-					return "", false
-				}
 			}
 
 			// 对于e:消息，内容是JSON，不应处理转义字符
@@ -637,16 +647,26 @@ func processNoStreamData(c *gin.Context, data string, modelInfo common.ModelInfo
 		case "0": // 实际回答内容
 			// 如果之前有思考内容，现在切换到实际内容，需要关闭思考标签
 			if *thinkStartType && !*thinkEndType {
-				text = "</think>\n\n" + content
+				if config.ReasoningHide != 1 {
+					text = "</think>\n\n" + content
+				} else {
+					text = content
+				}
 				*thinkStartType = false
 				*thinkEndType = true
 			} else {
 				text = content
 			}
 
+			// 处理文本内容
 			return text, true
 
 		case "g": // 思考内容
+			// 如果 ReasoningHide 为 1，则不返回思考内容
+			if config.ReasoningHide == 1 {
+				return "", true
+			}
+
 			// 如果是第一次收到思考内容
 			if !*thinkStartType {
 				text = "<think>\n\n" + content
@@ -662,18 +682,18 @@ func processNoStreamData(c *gin.Context, data string, modelInfo common.ModelInfo
 		case "e": // 结束消息
 			// 如果思考没有正常结束，确保关闭思考标签
 			if *thinkStartType && !*thinkEndType {
-				text = "</think>\n\n"
+				if config.ReasoningHide != 1 {
+					text = "</think>\n\n"
+				}
 				*thinkStartType = false
 				*thinkEndType = true
-
-				return "", false
-
 			}
 
 			// 对于e:消息，内容是JSON，不应处理转义字符
 			var finishData map[string]interface{}
 			if err := json.Unmarshal([]byte(content), &finishData); err == nil {
 				if finishReason, ok := finishData["finishReason"]; ok && finishReason != nil && finishReason != "" {
+					// 处理完成的消息
 					return "", false
 				}
 			}
