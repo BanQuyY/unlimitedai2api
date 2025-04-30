@@ -14,8 +14,8 @@ import (
 	"unlimitedai2api/common/config"
 	logger "unlimitedai2api/common/loggger"
 	"unlimitedai2api/cycletls"
-	"unlimitedai2api/kilo-api"
 	"unlimitedai2api/model"
+	"unlimitedai2api/unlimitedai-api"
 )
 
 const (
@@ -100,7 +100,7 @@ func handleNonStreamRequest(c *gin.Context, client cycletls.CycleTLS, openAIReq 
 			c.JSON(500, gin.H{"error": "Failed to marshal request body"})
 			return
 		}
-		sseChan, err := kilo_api.MakeStreamChatRequest(c, client, jsonData, cookie, modelInfo)
+		sseChan, err := unlimitedai_api.MakeStreamChatRequest(c, client, jsonData, cookie, modelInfo)
 		if err != nil {
 			logger.Errorf(ctx, "MakeStreamChatRequest err on attempt %d: %v", attempt+1, err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -426,7 +426,7 @@ func handleStreamRequest(c *gin.Context, client cycletls.CycleTLS, openAIReq mod
 				c.JSON(500, gin.H{"error": "Failed to marshal request body"})
 				return false
 			}
-			sseChan, err := kilo_api.MakeStreamChatRequest(c, client, jsonData, cookie, modelInfo)
+			sseChan, err := unlimitedai_api.MakeStreamChatRequest(c, client, jsonData, cookie, modelInfo)
 			if err != nil {
 				logger.Errorf(ctx, "MakeStreamChatRequest err on attempt %d: %v", attempt+1, err)
 				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -797,13 +797,13 @@ func safeClose(client cycletls.CycleTLS) {
 //	if !fileType.IsValid {
 //		return "", fmt.Errorf("invalid file type %s", fileType.Extension)
 //	}
-//	signUrl, err := kilo-api.GetSignURL(client, cookie, chatId, fileType.Extension)
+//	signUrl, err := unlimitedai-api.GetSignURL(client, cookie, chatId, fileType.Extension)
 //	if err != nil {
 //		logger.Errorf(c.Request.Context(), fmt.Sprintf("GetSignURL err  %v\n", err))
 //		return "", fmt.Errorf("GetSignURL err: %v\n", err)
 //	}
 //
-//	err = kilo-api.UploadToS3(client, signUrl, base64Str, fileType.MimeType)
+//	err = unlimitedai-api.UploadToS3(client, signUrl, base64Str, fileType.MimeType)
 //	if err != nil {
 //		logger.Errorf(c.Request.Context(), fmt.Sprintf("UploadToS3 err  %v\n", err))
 //		return "", err
